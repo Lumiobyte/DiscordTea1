@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from utils import blacklist_check, sommelier_data
 
-TOKEN = 'NTA3MDA0NDMzMjI2MjY4Njk5.Du-pyQ.u9yk7_lQ-DSBqQaryfV4JPo2Mjs'
+TOKEN = 'TOKEN'
 
 client = commands.Bot(command_prefix=["tea!", "Tea!"])
 client.remove_command('help')

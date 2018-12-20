@@ -66,7 +66,7 @@ class OrdersCog:
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
 
         if not sommelier_data.check(ctx.author):
-            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!")
+            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
             return
 
         try:
@@ -80,14 +80,17 @@ class OrdersCog:
                 self.order_ids[str(orderid)][1] = "brewing"
                 await ctx.send(":white_check_mark: **| You claimed the order of `{}`! Start brewing!**".format(self.order_ids[str(orderid)][0]))
                 await order_log.send(":man: **| Tea sommelier {} claimed the order with ID `{}` and is now brewing it!**".format(ctx.author.name, orderid))
-                await self.order_ids[str(orderid)][2].send(":man: **| Tea Sommelier {} claimed your order and is brewing it!**".format(ctx.author))
+                try:
+                    await self.order_ids[str(orderid)][2].send(":man: **| Tea Sommelier {} claimed your order and is brewing it!**".format(ctx.author))
+                except:
+                    await self.order_ids[str(orderid)][3].send(":man: **| {}, Tea Sommelier {} claimed your order and is brewing it!**".format(self.order_ids[str(orderid)][2].mention, ctx.author))      
 
     @commands.command()
     async def odecline(self, ctx, orderid, *, reason=None):
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
 
         if not sommelier_data.check(ctx.author):
-            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!")
+            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
             return
 
         try:
@@ -101,11 +104,17 @@ class OrdersCog:
                 await ctx.send(":white_check_mark: **| You declined the order with ID `{}`.**".format(orderid))
                 if reason:
                     await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` with reason '{}'.**".format(ctx.author.name, orderid, reason))
-                    await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order was declined by Tea Sommelier {} with reason '{}'.**".format(ctx.author, reason))
+                    try:
+                        await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][0], ctx.author, reason))
+                    except:
+                        await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author, reason))
                     self.order_ids.pop(str(orderid), None)
                 else:
                     await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` but they didn't specify why.**".format(ctx.author.name, orderid))
-                    await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order with ID `{}` was declined by Tea Sommelier {} but they didn't specify why.**".format(orderid, ctx.author))
+                    try:
+                        await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][0], orderid, ctx.author))
+                    except:
+                        await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author))
                     self.order_ids.pop(str(orderid), None)
 
     @commands.command()
@@ -113,7 +122,7 @@ class OrdersCog:
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
 
         if not sommelier_data.check(ctx.author):
-            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!")
+            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
             return
 
         try:
@@ -134,16 +143,23 @@ class OrdersCog:
                     return
                 else:
                     self.order_ids[str(orderid)][1] = "delivering"
-                    await ctx.send(":truck: **| Deliver the order to: <{}>**".format(invite))
+                    try:
+                        await ctx.author.send(":truck: **| Deliver the order to: <{}>**".format(invite))
+                    except:
+                        await ctx.send(":mailbox_with_mail: **| You need to open your DMs for this command.**")
                     await order_log.send(":truck: **| Tea Sommelier {} has claimed the order with ID `{}` for delivery!**".format(ctx.author.name, orderid))
-                    await self.order_ids[str(orderid)][2].send(":truck: **| Tea Sommelier {} has claimed your order for delivery! Expect it to arrive soon!**".format(ctx.author))
+                    try:
+                        await self.order_ids[str(orderid)][2].send(":truck: **| Tea Sommelier {} has claimed your order for delivery! Expect it to arrive soon!**".format(ctx.author))
+                    except:
+                        await self.order_ids[str(orderid)][3].send(":truck: **| {}, Tea Sommelier {} has claimed your order for delivery! Expect it to arrive soon!**".format(self.order_ids[str(orderid)][3].mention, ctx.author))
+
 
     @commands.command()
     async def ofinish(self, ctx, orderid):
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
 
         if not sommelier_data.check(ctx.author):
-            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!")
+            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
             return
 
         try:
@@ -183,29 +199,44 @@ class OrdersCog:
 
             await ctx.send(embed=embed)
 
-    @commands.command(name="active-orders", aliases=["list-orders", "list-o", "l-orders", "l-o"])
+    @commands.command(name="active-orders", aliases=["list", "list-o"])
     async def list_orders(self, ctx):
 
         if not sommelier_data.check(ctx.author):
-            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!")
+            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
             return
 
-        embed = discord.Embed(color=discord.Color.magenta())
-
         order_count = 0
-        embed_value = ""
+        helper_counter = 0
+        helper_value = ''
+        embed_value_list = []
+        list_of_embeds = []
 
         for orderid in self.order_ids:
             order_count += 1
-            embed_value += "**ID `{}`: `{}` ordered by `{}`. Status: `{}`**\n".format(orderid, self.order_ids[orderid][0], self.order_ids[orderid][2], self.order_ids[orderid][1])
+            helper_counter += 1
+            helper_value += "**ID `{}`: `{}` ordered by `{}`. Status: `{}`**\n".format(orderid, self.order_ids[orderid][0], self.order_ids[orderid][2], self.order_ids[orderid][1])
+            if helper_counter >= 5:
+                embed_value_list.append(helper_value)
+                helper_counter = 0
+                helper_value = ''
 
-        if order_count > 0:
-            embed.add_field(name="All active orders ({})".format(order_count), value=embed_value)
-        else:
+        if helper_value != '':
+            embed_value_list.append(helper_value)
+
+        if order_count <= 0:
+            embed = discord.Embed(color=discord.Color.magenta())
             embed.add_field(name="All active orders ({})".format(order_count), value="No active orders!")
+            await ctx.send(embed=embed)
+            return
 
-        await ctx.send(embed=embed)
+        for embed_value in embed_value_list:
+            embed = discord.Embed(color=discord.Color.magenta())
+            embed.add_field(name="All Active Orders ({})".format(order_count), value=embed_value)
+            list_of_embeds.append(embed)
 
+        for embed in list_of_embeds:
+            await ctx.send(embed=embed)
 
 
 def setup(client):

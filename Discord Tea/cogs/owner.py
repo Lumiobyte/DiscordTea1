@@ -24,7 +24,8 @@ class OwnerCog:
     @commands.command()
     @commands.is_owner()
     async def blacklist(self, ctx, mode, user: discord.Member):
-        role = discord.utils.get(ctx.guild.roles, name="Blacklisted")
+        if ctx.guild.id == 524024216463605770:
+            role = discord.utils.get(ctx.guild.roles, name="Blacklisted")
 
         if mode == 'add':
             blacklist_check.blacklist_add(user)

@@ -23,21 +23,6 @@ class OwnerCog:
 
     @commands.command()
     @commands.is_owner()
-    async def blacklist(self, ctx, mode, user: discord.Member):
-        if ctx.guild.id == 524024216463605770:
-            role = discord.utils.get(ctx.guild.roles, name="Blacklisted")
-
-        if mode == 'add':
-            blacklist_check.blacklist_add(user)
-            await ctx.send(":white_check_mark: **| Blacklisted {}.**".format(user.name))
-            await user.add_roles(role)
-        elif mode == 'remove':
-            blacklist_check.blacklist_remove(user)
-            await ctx.send(":white_check_mark: **| Removed {} from the blacklist.**".format(user.name))
-            await user.remove_roles(role)
-
-    @commands.command()
-    @commands.is_owner()
     async def sommeliers(self, ctx, mode, user: discord.Member):
         role = discord.utils.get(ctx.guild.roles, name="Tea Sommelier")
 
@@ -52,8 +37,8 @@ class OwnerCog:
 
     @commands.command()
     @commands.is_owner()
-    async def shutdown(self, ctx):
-        await ctx.send(":white_check_mark: **| Shutting down.**")
+    async def restart(self, ctx):
+        await ctx.send(":white_check_mark: **| Restarting...**")
         await self.client.logout()
 
 def setup(client):

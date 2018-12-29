@@ -10,12 +10,12 @@ class EventsCog:
         if isinstance(error, commands.errors.CommandNotFound):
             pass
         elif isinstance(error, commands.errors.CommandInvokeError):
-            await ctx.send(":x: **| There was an error invoking the command.**")
+            await ctx.send(":x: **| There was an error invoking the command: `{}`**".format(str(e)))
             print("COMMAND INVOKE ERROR: {} threw '{}'".format(ctx.message.content, str(error)))
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.send(":x: **| You entered a bad argument into the command: `{}`**".format(str(error)))
         elif isinstance(error, commands.errors.CommandOnCooldown):
-            await ctx.send(":X: **| This command has a cooldown; please wait **{}s** before using it again.**".format(round(error.retry_after, 2)))
+            await ctx.send(":x: **| This command has a cooldown; please wait **{}s** before using it again.**".format(round(error.retry_after, 2)))
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(":x: **| A required command argument is missing.**")
         elif isinstance(error, discord.Forbidden):

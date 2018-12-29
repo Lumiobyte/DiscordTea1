@@ -11,10 +11,32 @@ class OrdersCog:
     def __init__(self, client):
         self.client = client
         self.order_ids = {}
+        self.order_count = 0
+        self.total_order_count = 0
+        self.locked = False
+        self.ids_temp = [478690278530613269, 471555912012922881, 420042033818763285, 449994901048786944, 336281913578881027, 429312422323683338, 368860954227900416]
+
+    @commands.command()
+    async def lock(self, ctx):
+        if ctx.author.id not in self.ids_temp:
+            await ctx.send("you can't use this")
+            return
+
+        if self.locked == False:
+            self.locked = True
+            await ctx.send("locked orders")
+        elif self.locked == True:
+            self.locked = False
+            await ctx.send("unlocked orders")
 
     @commands.command()
     async def order(self, ctx, *, order=None):
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
+        order_count = 0
+
+        if self.locked == True:
+            await ctx.send(":santa: **| The Discord Tea staff are on Christmas break. They'll be ready to serve again in a day or two. Thanks for your patience!**")
+            return
 
         if not order:
             await ctx.send(":grey_question: **| What type of tea would you like to order, {}?**".format(ctx.author.name))
@@ -24,15 +46,33 @@ class OrdersCog:
             await ctx.send(":no_entry_sign: **| Your order must be under 150 characters long!**")
             return      
 
-        if "coffee" in order.lower():
-            await ctx.send(":rage: **| Your order contained COFFEE! You TRAITOR!!**")
-            return
+        for item in ["coffee", "c0ffee", "coff33", "c0ff3e", "c0ffe3", "coff3e", "coffe3"]:
+            if item in order.lower():
+                await ctx.send(":rage: **| Your order contained COFFEE! You TRAITOR!!**")
+                return
 
         if "tea" not in order.lower():
             await ctx.send(":no_entry_sign: **| Your order must contain tea!**")
+            return
+
+        for orderid in self.order_ids:
+            if self.order_ids[str(orderid)][2] == ctx.author:
+                order_count += 1
+
+        if order_count >= 2:
+            await ctx.send(":no_entry_sign: **| You can only have 2 orders pending at once!**")
+            return
         else:
-            orderid = random.randint(0, 99999)
-            await ctx.send("Ordered a **{}** for you! It will be delivered soon! Your order ID: `{}`".format(order, orderid))
+            self.total_order_count += 1
+            orderid = self.total_order_count
+            self.order_count += 1
+            if self.order_count >= 22:
+                await ctx.send(":no_entry_sign: **| The order limit of 22 orders has been hit. Please wait hile our staff complete some orders.**")
+                return
+            elif self.order_count >= 6:
+                await ctx.send("Ordered a **{}** for you! It will be delivered soon! Your order ID: `{}`\n\n:warning: Discord Tea is dealing with a large number of orders right now. Service may be delayed.".format(order, orderid))
+            else:
+                await ctx.send("Ordered a **{}** for you! It will be delivered soon! Your order ID: `{}`".format(order, orderid))
             self.order_ids[str(orderid)] = [order, "waiting", ctx.author, ctx.channel]
             await order_log.send(":inbox_tray: **| Received order of `{}` with ID `{}`. Ordered by {} in server {}.**".format(order, orderid, ctx.author, ctx.guild.name))
 
@@ -62,8 +102,20 @@ class OrdersCog:
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def oaccept(self, ctx, orderid):
+    @commands.cooldown(1, 1800, commands.BucketType.user)
+    async def remind(self, ctx):
+        kitchen_channel = discord.utils.get(self.client.get_all_channels(), id=524040649973039107)
+
+        await ctx.send(":white_check_mark: **| Reminded staff to brew your order!**")
+        await kitchen_channel.send(":warning: **| @here, please check the order list! There are unbrewed orders waiting!**")
+
+    @commands.command()
+    async def brew(self, ctx, orderid):
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
+
+        if not ctx.guild.id == 524024216463605770:
+            await ctx.send(":lock: **| This command cannot be used in this server!**")
+            return
 
         if not sommelier_data.check(ctx.author):
             await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
@@ -86,8 +138,12 @@ class OrdersCog:
                     await self.order_ids[str(orderid)][3].send(":man: **| {}, Tea Sommelier {} claimed your order and is brewing it!**".format(self.order_ids[str(orderid)][2].mention, ctx.author))      
 
     @commands.command()
-    async def odecline(self, ctx, orderid, *, reason=None):
+    async def decline(self, ctx, orderid, *, reason=None):
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
+
+        if not ctx.guild.id == 524024216463605770:
+            await ctx.send(":lock: **| This command cannot be used in this server!**")
+            return
 
         if not sommelier_data.check(ctx.author):
             await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
@@ -109,17 +165,23 @@ class OrdersCog:
                     except:
                         await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author, reason))
                     self.order_ids.pop(str(orderid), None)
+                    self.order_count -= 1
                 else:
                     await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` but they didn't specify why.**".format(ctx.author.name, orderid))
                     try:
-                        await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][0], orderid, ctx.author))
+                        await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][0], ctx.author))
                     except:
                         await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author))
                     self.order_ids.pop(str(orderid), None)
+                    self.order_count -= 1
 
     @commands.command()
-    async def odeliver(self, ctx, orderid):
+    async def deliver(self, ctx, orderid):
         order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
+
+        if not ctx.guild.id == 524024216463605770:
+            await ctx.send(":lock: **| This command cannot be used in this server!**")
+            return
 
         if not sommelier_data.check(ctx.author):
             await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
@@ -130,49 +192,33 @@ class OrdersCog:
         except KeyError:
             await ctx.send(":no_entry_sign: **| No order with that ID!**")
         else:
-            if self.order_ids[str(orderid)][1] != "brewing":
+            if self.order_ids[str(orderid)][1] == "waiting":
                 await ctx.send(":no_entry_sign: **| That order is not ready for delivery!**")
-            elif self.order_ids[str(orderid)][1] == "delivering":
-                await ctx.send(":no_entry_sign: **| That order is already being delivered by a Tea Sommlier!**")
             else:
                 try:
                     invite = await self.order_ids[str(orderid)][3].create_invite(max_uses=1, reason="To deliver tea")
-                except Excpetion as e:
+                except Exception as e:
                     await ctx.send(":x: **| There was an error creating invite.**")
                     print("ERROR CREATING INVITE: {}".format(str(e)))
+                    try:
+                        await self.order_ids[str(orderid)][2].send(":x: **| The bot couldn't create an invite to your server `{}` therefore your tea cannot be delivered. Give the bot create invite permissions and order again.**".format(self.order_ids[str(orderid)][3].guild.name))
+                    except:
+                        await self.order_ids[str(orderid)][3].send(":x: **| {}, The bot couldn't create an invite to this server therefore your tea cannot be delivered. Give the bot create invite permissions and order again.**".format(self.order_ids[str(orderid)][2].mention))
+                    self.order_ids.pop(str(orderid), None)
+                    self.order_count -= 1
                     return
                 else:
-                    self.order_ids[str(orderid)][1] = "delivering"
                     try:
-                        await ctx.author.send(":truck: **| Deliver the order to: <{}>**".format(invite))
+                        await ctx.author.send(":truck: **| Deliver the order to: {} in <{}>**".format(self.order_ids[str(orderid)][2], invite))
                     except:
                         await ctx.send(":mailbox_with_mail: **| You need to open your DMs for this command.**")
-                    await order_log.send(":truck: **| Tea Sommelier {} has claimed the order with ID `{}` for delivery!**".format(ctx.author.name, orderid))
+                    await order_log.send(":truck: **| Tea Sommelier {} is delivering the order with ID `{}`!**".format(ctx.author.name, orderid))
                     try:
-                        await self.order_ids[str(orderid)][2].send(":truck: **| Tea Sommelier {} has claimed your order for delivery! Expect it to arrive soon!**".format(ctx.author))
+                        await self.order_ids[str(orderid)][2].send(":truck: **| Tea Sommelier {} is delivering your order! Thanks for using our service!**".format(ctx.author))
                     except:
-                        await self.order_ids[str(orderid)][3].send(":truck: **| {}, Tea Sommelier {} has claimed your order for delivery! Expect it to arrive soon!**".format(self.order_ids[str(orderid)][3].mention, ctx.author))
-
-
-    @commands.command()
-    async def ofinish(self, ctx, orderid):
-        order_log = discord.utils.get(self.client.get_all_channels(), id=524040719929704479)
-
-        if not sommelier_data.check(ctx.author):
-            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
-            return
-
-        try:
-            self.order_ids[str(orderid)]
-        except KeyError:
-            await ctx.send(":no_entry_sign: **| No order with that ID!**")
-        else:
-            if self.order_ids[str(orderid)][1] != "delivering":
-                await ctx.send(":no_entry_sign: **| That order is not ready to be declared finished!**")
-            else:
-                await ctx.send(":white_check_mark: **| Order Completed!**")
-                await order_log.send(":outbox_tray: **| Order with ID `{}` was finished by Tea Sommelier {}.**".format(orderid, ctx.author.name))
-                self.order_ids.pop(str(orderid), None)
+                        await self.order_ids[str(orderid)][3].send(":truck: **| {}, Tea Sommelier {} is delivering your order! Thanks for using our service!**".format(self.order_ids[str(orderid)][2].mention, ctx.author))
+                    self.order_ids.pop(str(orderid), None)
+                    self.order_count -= 1
 
     @commands.command()
     async def oinfo(self, ctx, orderid):
@@ -184,13 +230,14 @@ class OrdersCog:
             order = self.order_ids[str(orderid)]
             embed = discord.Embed(color=discord.Color.teal())
             embed.add_field(name="Order Information ({})".format(orderid), value="""**
-            Customer: {}
+            Customer: {} ({})
             Order ID: `{}`
             Order of: {}
             Ordered in: {}, #{}
             Order Status: {}
             **""".format(
                 order[2],
+                order[2].id,
                 orderid,
                 order[0],
                 order[3].guild, order[3],
@@ -199,8 +246,37 @@ class OrdersCog:
 
             await ctx.send(embed=embed)
 
+    @commands.command()
+    async def random(self, ctx):
+        unfinished_orders = []
+
+        if not ctx.guild.id == 524024216463605770:
+            await ctx.send(":lock: **| This command cannot be used in this server!**")
+            return
+
+        if not sommelier_data.check(ctx.author):
+            await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")
+            return
+
+        for orderid in self.order_ids:
+            if self.order_ids[str(orderid)][1] == "waiting":
+                unfinished_orders.append(orderid)
+
+        if len(unfinished_orders) > 0:
+            assigned_order = random.choice(unfinished_orders)
+        else:
+            await ctx.send(":no_entry_sign: **| There are no waiting orders right now!**")
+            return
+
+        await ctx.send(":white_check_mark: **| You've been assigned the order with ID `{}`! Start brewing!**".format(assigned_order))
+        self.order_ids[str(orderid)][1] = "brewing"
+
     @commands.command(name="active-orders", aliases=["list", "list-o"])
     async def list_orders(self, ctx):
+
+        if not ctx.guild.id == 524024216463605770:
+            await ctx.send(":lock: **| This command cannot be used in this server!**")
+            return
 
         if not sommelier_data.check(ctx.author):
             await ctx.send(":lock: **| Only Tea Sommeliers can use this command!**")

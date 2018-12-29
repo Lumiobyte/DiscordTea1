@@ -7,7 +7,7 @@ TOKEN = 'TOKEN'
 client = commands.Bot(command_prefix=["tea!", "Tea!"])
 client.remove_command('help')
 
-cogs = ['cogs.orders', 'cogs.owner', 'cogs.utilities', 'cogs.events']
+cogs = ['cogs.orders', 'cogs.owner', 'cogs.utilities', 'cogs.events', 'cogs.fun', 'cogs.feedback']
 
 for cog in cogs:
     try:

@@ -154,26 +154,23 @@ class OrdersCog:
         except KeyError:
             await ctx.send(":no_entry_sign: **| No order with that ID!**")
         else:
-            if self.order_ids[str(orderid)][1] != "waiting":
-                await ctx.send(":no_entry_sign: **| That order is already being processed by a sommelier!**")
+            await ctx.send(":white_check_mark: **| You declined the order with ID `{}`.**".format(orderid))
+            if reason:
+                await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` with reason '{}'.**".format(ctx.author.name, orderid, reason))
+                try:
+                    await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][0], ctx.author, reason))
+                except:
+                    await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author, reason))
+                self.order_ids.pop(str(orderid), None)
+                self.order_count -= 1
             else:
-                await ctx.send(":white_check_mark: **| You declined the order with ID `{}`.**".format(orderid))
-                if reason:
-                    await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` with reason '{}'.**".format(ctx.author.name, orderid, reason))
-                    try:
-                        await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][0], ctx.author, reason))
-                    except:
-                        await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` was declined by Tea Sommelier {} with reason '{}'.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author, reason))
-                    self.order_ids.pop(str(orderid), None)
-                    self.order_count -= 1
-                else:
-                    await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` but they didn't specify why.**".format(ctx.author.name, orderid))
-                    try:
-                        await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][0], ctx.author))
-                    except:
-                        await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author))
-                    self.order_ids.pop(str(orderid), None)
-                    self.order_count -= 1
+                await order_log.send(":triangular_flag_on_post: **| Tea sommelier {} declined the order with ID `{}` but they didn't specify why.**".format(ctx.author.name, orderid))
+                try:
+                    await self.order_ids[str(orderid)][2].send(":triangular_flag_on_post: **| Your order of `{}` was declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][0], ctx.author))
+                except:
+                    await self.order_ids[str(orderid)][3].send(":triangular_flag_on_post: **| {}, Your order of `{}` declined by Tea Sommelier {} but they didn't specify why.**".format(self.order_ids[str(orderid)][2].mention, self.order_ids[str(orderid)][0], ctx.author))
+                self.order_ids.pop(str(orderid), None)
+                self.order_count -= 1
 
     @commands.command()
     async def deliver(self, ctx, orderid):
